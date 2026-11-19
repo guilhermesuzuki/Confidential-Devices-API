@@ -17,6 +17,14 @@ namespace Devices.Models.Data
         /// </summary>
         public DbSet<Device> Devices { get; set; }
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+
+            optionsBuilder.UseSqlServer("Server=(localdb)\\ProjectModels;Database=Devices;Trusted_Connection=True;MultipleActiveResultSets=true");
+            optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
