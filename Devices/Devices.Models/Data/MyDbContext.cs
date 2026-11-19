@@ -7,8 +7,16 @@ using System.Threading.Tasks;
 
 namespace Devices.Models.Data
 {
+    /// <summary>
+    /// Devices' database context
+    /// </summary>
     public class MyDbContext : DbContext
     {
+        /// <summary>
+        /// Devices' table
+        /// </summary>
+        public DbSet<Device> Devices { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
