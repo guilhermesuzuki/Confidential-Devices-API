@@ -13,6 +13,19 @@ namespace Devices.Models.Validations
     {
         public DeviceInsertValidation(IDbContextFactory<MyDbContext> factory) : base()
         {
+            RuleFor(x => x.Id)
+                .Cascade(CascadeMode.Stop)
+                .Must(x => x <= 0)
+                .WithMessage("Invalid device ID.")
+                .MustAsync(async (id, cancellation) =>
+                {
+                    using var db = await factory.CreateDbContextAsync(cancellation);
+                    var deviceInDb = await db.Devices.FirstOrDefaultAsync(x => x.Id == id, cancellation);
+                    return deviceInDb == null;
+                })
+                .WithMessage("Device cannot be inserted because the ID already exists in the database.")
+                ;
+
             RuleFor(x => x.Name)
                 .Cascade(CascadeMode.Stop)
                 .NotNull().WithMessage("Device name is required.")
