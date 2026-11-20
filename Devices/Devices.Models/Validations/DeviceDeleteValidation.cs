@@ -4,10 +4,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Devices.Models.Validations
 {
+    /// <summary>
+    /// Device delete fluent validation
+    /// </summary>
     public class DeviceDeleteValidation : FluentValidation.AbstractValidator<int>
     {
         public DeviceDeleteValidation(IDbContextFactory<MyDbContext> factory) : base()
         {
+            // I know there's a trade off by pulling the same row from the database twice here, but it's because of
+            // the way the fluent validations work.
+
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
                 .MustAsync(async (id, cancellation) =>

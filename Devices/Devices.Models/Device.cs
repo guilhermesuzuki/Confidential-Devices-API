@@ -4,6 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace Devices.Models
 {
+    /// <summary>
+    /// EF core Devices' table representation
+    /// </summary>
     [Table("Devices")]
     public class Device
     {

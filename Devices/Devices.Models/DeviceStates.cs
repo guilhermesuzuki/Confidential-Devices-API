@@ -1,5 +1,8 @@
 ﻿namespace Devices.Models
 {
+    /// <summary>
+    /// Device states
+    /// </summary>
     public enum DeviceStates
     {
         Available = 0,

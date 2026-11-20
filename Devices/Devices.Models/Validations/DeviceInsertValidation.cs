@@ -4,8 +4,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Devices.Models.Validations
 {
+    /// <summary>
+    /// Device insert fluent validation
+    /// </summary>
     public class DeviceInsertValidation : AbstractValidator<InsertDevice>
     {
+        /// <summary>
+        /// Name and brand have a maximum length of 64 characters
+        /// </summary>
+        /// <param name="factory"></param>
         public DeviceInsertValidation(IDbContextFactory<MyDbContext> factory) : base()
         {
             RuleFor(x => x.Name)
