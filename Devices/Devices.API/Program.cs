@@ -10,8 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContextFactory<MyDbContext>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IValidator<int>, DeviceDeleteValidation>();
-builder.Services.AddKeyedSingleton<IValidator<Device>, DeviceInsertValidation>("insert");
-builder.Services.AddKeyedSingleton<IValidator<Device>, DeviceUpdateValidation>("update");
+builder.Services.AddKeyedSingleton<IValidator<InsertDevice>, DeviceInsertValidation>("insert");
+builder.Services.AddKeyedSingleton<IValidator<UpdateDevice>, DeviceUpdateValidation>("update");
 
 builder.Services.AddControllers();
 

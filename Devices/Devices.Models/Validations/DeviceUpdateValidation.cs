@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Devices.Models.Validations
 {
-    public class DeviceUpdateValidation : FluentValidation.AbstractValidator<Device>
+    public class DeviceUpdateValidation : FluentValidation.AbstractValidator<UpdateDevice>
     {
         public DeviceUpdateValidation(IDbContextFactory<MyDbContext> factory)
         {

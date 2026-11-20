@@ -11,13 +11,13 @@ namespace Devices.API.Controllers
     public class DevicesController(
         IDbContextFactory<MyDbContext> factory,
         IValidator<int> delete,
-        [FromKeyedServices("insert")] IValidator<Device> insert,
-        [FromKeyedServices("update")] IValidator<Device> update,
+        [FromKeyedServices("insert")] IValidator<InsertDevice> insert,
+        [FromKeyedServices("update")] IValidator<UpdateDevice> update,
         TimeProvider timeProvider
         ) : Controller
     {
         [HttpPost("create")]
-        public async Task<IActionResult> CreateNewDeviceAsync([FromBody] Device device, CancellationToken cancellation)
+        public async Task<IActionResult> CreateNewDeviceAsync([FromBody] InsertDevice device, CancellationToken cancellation)
         {
             var validationResult = await insert.ValidateAsync(device, cancellation);
             if (!validationResult.IsValid)
@@ -25,26 +25,39 @@ namespace Devices.API.Controllers
                 return BadRequest(validationResult.Errors.Select(x => x.ErrorMessage));
             }
 
-            device.CreationTime = timeProvider.GetUtcNow();
+            var newDevice = new Device
+            {
+                Name = device.Name,
+                Brand = device.Brand,
+                State = device.State,
+                CreationTime = timeProvider.GetUtcNow(),
+            };
 
             using var db = await factory.CreateDbContextAsync(cancellation);
-            db.Devices.Add(device);
+            db.Devices.Add(newDevice);
             await db.SaveChangesAsync(cancellation);
-            return Ok(device);
+            return Ok(newDevice);
         }
         
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateDeviceAsync([FromBody] Device device, CancellationToken cancellation)
+        public async Task<IActionResult> UpdateDeviceAsync([FromBody] UpdateDevice device, CancellationToken cancellation)
         {
             var validationResult = await update.ValidateAsync(device, cancellation);
             if (!validationResult.IsValid)
             {
                 return BadRequest(validationResult.Errors.Select(x => x.ErrorMessage));
             }
+
             using var db = await factory.CreateDbContextAsync(cancellation);
-            db.Devices.Update(device);
+            var updateDevice = await db.Devices.AsTracking().FirstOrDefaultAsync(x => x.Id == device.Id, cancellation);
+
+            updateDevice!.Name = device.Name;
+            updateDevice!.Brand = device.Brand;
+            updateDevice!.State = device.State;
+
+            db.Devices.Update(updateDevice);
             await db.SaveChangesAsync(cancellation);
-            return Ok(device);
+            return Ok(updateDevice);
         }
 
         [HttpGet("{id:int}")]
