@@ -1,11 +1,6 @@
 ﻿using Devices.Models.Data;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Devices.Models.Validations
 {
@@ -15,7 +10,7 @@ namespace Devices.Models.Validations
         {
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(async (id, cancellation) => 
+                .MustAsync(async (id, cancellation) =>
                 {
                     using var db = await factory.CreateDbContextAsync(cancellation);
                     var deviceInDb = await db.Devices.FirstOrDefaultAsync(x => x.Id == id, cancellation);

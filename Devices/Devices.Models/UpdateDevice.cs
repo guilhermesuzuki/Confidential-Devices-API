@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace Devices.Models
 {
@@ -12,9 +7,9 @@ namespace Devices.Models
     /// </summary>
     public class UpdateDevice
     {
+        public string? Brand { get; set; }
         public int Id { get; set; }
         public string? Name { get; set; }
-        public string? Brand { get; set; }
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DeviceStates? State { get; set; }

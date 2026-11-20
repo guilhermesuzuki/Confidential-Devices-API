@@ -7,19 +7,18 @@ namespace Devices.Models
     [Table("Devices")]
     public class Device
     {
+        [StringLength(64)]
+        public string Brand { get; set; } = string.Empty;
+
+        public DateTimeOffset CreationTime { get; set; } = DateTimeOffset.MinValue;
+
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
         [StringLength(64)]
         public string Name { get; set; } = string.Empty;
-
-        [StringLength(64)]
-        public string Brand { get; set; } = string.Empty;
-
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public DeviceStates State { get; set; } = DeviceStates.Available;
-
-        public DateTimeOffset CreationTime { get; set; } = DateTimeOffset.MinValue;
     }
 }
