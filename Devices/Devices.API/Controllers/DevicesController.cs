@@ -17,7 +17,15 @@ namespace Devices.API.Controllers
         TimeProvider timeProvider
         ) : Controller
     {
+        /// <summary>
+        /// This endpoint creates a new device in a POST http method, validating the insert device body payload.
+        /// </summary>
+        /// <param name="device">information to create a new device</param>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns>Status 400 when something goes wrong, or 200 when everything goes fine</returns>
         [HttpPost("create")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> CreateNewDeviceAsync([FromBody] InsertDevice device, CancellationToken cancellation)
         {
             var validationResult = await insert.ValidateAsync(device, cancellation);
@@ -40,7 +48,15 @@ namespace Devices.API.Controllers
             return Ok(newDevice);
         }
 
+        /// <summary>
+        /// This endpoint deletes an existing device, validating the ID (if the device exists in the database).
+        /// </summary>
+        /// <param name="id">Device ID to delete</param>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns></returns>
         [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DeleteDeviceAsync([FromRoute] int id, CancellationToken cancellation)
         {
             var validationResult = await delete.ValidateAsync(id, cancellation);
@@ -55,7 +71,13 @@ namespace Devices.API.Controllers
             return Ok("Device deleted succesfully");
         }
 
+        /// <summary>
+        /// This endpoint fetches all devices from the database.
+        /// </summary>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns></returns>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> FetchAllDevicesAsync(CancellationToken cancellation)
         {
             using var db = await factory.CreateDbContextAsync(cancellation);
@@ -63,7 +85,14 @@ namespace Devices.API.Controllers
             return Ok(devicesInDb);
         }
 
+        /// <summary>
+        /// This endpoint fetches all devices by brand
+        /// </summary>
+        /// <param name="brand">brand name</param>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns></returns>
         [HttpGet("brand")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> FetchDevicesByBrandAsync([FromQuery] string brand, CancellationToken cancellation)
         {
             using var db = await factory.CreateDbContextAsync(cancellation);
@@ -71,7 +100,14 @@ namespace Devices.API.Controllers
             return Ok(devicesInDb);
         }
 
+        /// <summary>
+        /// This endpoint fetches all devices by state
+        /// </summary>
+        /// <param name="state">state</param>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns></returns>
         [HttpGet("state")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> FetchDevicesByStateAsync([FromQuery] DeviceStates state, CancellationToken cancellation)
         {
             using var db = await factory.CreateDbContextAsync(cancellation);
@@ -79,7 +115,15 @@ namespace Devices.API.Controllers
             return Ok(devicesInDb);
         }
 
+        /// <summary>
+        /// This endpoint fetches a single device, given an ID.
+        /// </summary>
+        /// <param name="id">ID to retrieve</param>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns></returns>
         [HttpGet("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> FetchSingleDeviceAsync([FromRoute] int id, CancellationToken cancellation)
         {
             if (id <= 0)
@@ -98,7 +142,15 @@ namespace Devices.API.Controllers
             return Ok(deviceInDb);
         }
 
+        /// <summary>
+        /// This endpoint fully/partially updates a device in the database, depending on the information present in the update device payload.
+        /// </summary>
+        /// <param name="device">update device payload</param>
+        /// <param name="cancellation">cancellation token</param>
+        /// <returns></returns>
         [HttpPut("update")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateDeviceAsync([FromBody] UpdateDevice device, CancellationToken cancellation)
         {
             var validationResult = await update.ValidateAsync(device, cancellation);
