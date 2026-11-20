@@ -1,4 +1,9 @@
 <Solution>
-  <Project Path="Devices.API/Devices.API.csproj" />
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Project Path="Devices.API/Devices.API.csproj">
+    <Platform Project="x64" />
+  </Project>
   <Project Path="Devices.Models/Devices.Models.csproj" />
 </Solution>
