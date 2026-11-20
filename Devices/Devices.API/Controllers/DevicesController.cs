@@ -96,7 +96,13 @@ namespace Devices.API.Controllers
         public async Task<IActionResult> FetchDevicesByBrandAsync([FromQuery] string brand, CancellationToken cancellation)
         {
             using var db = await factory.CreateDbContextAsync(cancellation);
-            var devicesInDb = await db.Devices.Where(x => x.Brand == brand).ToListAsync(cancellation);
+
+            // point of improvement: the documentation doesn't say anything about this fetching endpoint being case insensitive, but I did it anyway, because it made sense.
+            var query = from d in db.Devices.AsQueryable()
+                        where EF.Functions.Like(d.Brand, brand)
+                        select d;
+
+            var devicesInDb = await query.ToListAsync(cancellation);
             return Ok(devicesInDb);
         }
 
