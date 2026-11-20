@@ -116,7 +116,7 @@ namespace Devices.API.Controllers
             var deviceInDb = await db.Devices.FirstOrDefaultAsync(x => x.Id == id, cancellation);
             db.Devices.Remove(deviceInDb!);
             await db.SaveChangesAsync(cancellation);
-            return Ok();
+            return Ok("Device deleted succesfully");
         }
     }
 }
