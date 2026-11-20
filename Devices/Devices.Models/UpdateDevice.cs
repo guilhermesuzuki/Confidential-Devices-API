@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Devices.Models
@@ -12,8 +13,10 @@ namespace Devices.Models
     public class UpdateDevice
     {
         public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Brand { get; set; } = string.Empty;
-        public DeviceStates State { get; set; } = DeviceStates.Available;
+        public string? Name { get; set; }
+        public string? Brand { get; set; }
+
+        [JsonConverter(typeof(JsonStringEnumConverter))]
+        public DeviceStates? State { get; set; }
     }
 }

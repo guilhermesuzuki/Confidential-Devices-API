@@ -28,7 +28,11 @@ namespace Devices.Models.Validations
                     var deviceInDb = await db.Devices.FirstOrDefaultAsync(x => x.Id == device.Id, cancellation);
                     if (deviceInDb!.State == DeviceStates.InUse)
                     {
-                        if (deviceInDb.Name != device.Name || deviceInDb.Brand != device.Brand)
+                        if (device.Name != null && deviceInDb.Name != device.Name)
+                        {
+                            return false;
+                        }
+                        if (device.Brand != null && deviceInDb.Brand != device.Brand)
                         {
                             return false;
                         }

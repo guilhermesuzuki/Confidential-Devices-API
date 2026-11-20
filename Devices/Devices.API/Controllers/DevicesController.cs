@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Devices.API.Controllers
 {
     [ApiController]
+    [Produces("text/json")]
     [Route("api/[controller]")]
     public class DevicesController(
         IDbContextFactory<MyDbContext> factory,
@@ -51,9 +52,9 @@ namespace Devices.API.Controllers
             using var db = await factory.CreateDbContextAsync(cancellation);
             var updateDevice = await db.Devices.AsTracking().FirstOrDefaultAsync(x => x.Id == device.Id, cancellation);
 
-            updateDevice!.Name = device.Name;
-            updateDevice!.Brand = device.Brand;
-            updateDevice!.State = device.State;
+            updateDevice!.Name = device.Name ?? updateDevice.Name;
+            updateDevice!.Brand = device.Brand ?? updateDevice.Brand;
+            updateDevice!.State = device.State ?? updateDevice.State;
 
             db.Devices.Update(updateDevice);
             await db.SaveChangesAsync(cancellation);
@@ -77,6 +78,45 @@ namespace Devices.API.Controllers
             }
 
             return Ok(deviceInDb);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> FetchAllDevicesAsync(CancellationToken cancellation)
+        {
+            using var db = await factory.CreateDbContextAsync(cancellation);
+            var devicesInDb = await db.Devices.ToListAsync(cancellation);
+            return Ok(devicesInDb);
+        }
+
+        [HttpGet("brand")]
+        public async Task<IActionResult> FetchDevicesByBrandAsync([FromQuery] string brand, CancellationToken cancellation)
+        {
+            using var db = await factory.CreateDbContextAsync(cancellation);
+            var devicesInDb = await db.Devices.Where(x => x.Brand == brand).ToListAsync(cancellation);
+            return Ok(devicesInDb);
+        }
+
+        [HttpGet("state")]
+        public async Task<IActionResult> FetchDevicesByStateAsync([FromQuery] DeviceStates state, CancellationToken cancellation)
+        {
+            using var db = await factory.CreateDbContextAsync(cancellation);
+            var devicesInDb = await db.Devices.Where(x => x.State == state).ToListAsync(cancellation);
+            return Ok(devicesInDb);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteDeviceAsync([FromRoute] int id, CancellationToken cancellation)
+        {
+            var validationResult = await delete.ValidateAsync(id, cancellation);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(x => x.ErrorMessage));
+            }
+            using var db = await factory.CreateDbContextAsync(cancellation);
+            var deviceInDb = await db.Devices.FirstOrDefaultAsync(x => x.Id == id, cancellation);
+            db.Devices.Remove(deviceInDb!);
+            await db.SaveChangesAsync(cancellation);
+            return Ok();
         }
     }
 }

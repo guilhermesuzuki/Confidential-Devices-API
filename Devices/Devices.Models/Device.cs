@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Devices.Models
 {
@@ -16,6 +17,7 @@ namespace Devices.Models
         [StringLength(64)]
         public string Brand { get; set; } = string.Empty;
 
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public DeviceStates State { get; set; } = DeviceStates.Available;
 
         public DateTimeOffset CreationTime { get; set; } = DateTimeOffset.MinValue;
