@@ -35,8 +35,8 @@ namespace Devices.Models.Data
                 x => Enum.Parse<DeviceStates>(x)
                 );
             modelBuilder.Entity<Device>().Property(x => x.CreationTime).HasConversion(
-                x => x.ToString("yyyy.MM.dd HH:mm:ss.ffffff"),
-                x => DateTime.ParseExact(x, "yyyy.MM.dd HH:mm:ss.ffffff", null)
+                x => x.ToString("yyyy.MM.dd HH:mm:ss.fffffff"),
+                x => DateTime.ParseExact(x, "yyyy.MM.dd HH:mm:ss.fffffff", null)
                 );
         }
     }
