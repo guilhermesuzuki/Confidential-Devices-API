@@ -47,6 +47,78 @@ namespace Devices.Tests
         }
 
         [Fact]
+        public async Task CreateDevice_WhenBrandIsTooLarge_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = new string('A', 256),
+                Name = "Test Name",
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeFalse();
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device brand cannot exceed 64 characters.");
+
+            var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            allDevicesInDatabase.ShouldNotBeNull();
+            allDevicesInDatabase.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task CreateDevice_WhenNameIsTooLarge_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand",
+                Name = new string('A', 256),
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeFalse();
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device name cannot exceed 64 characters.");
+
+            var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            allDevicesInDatabase.ShouldNotBeNull();
+            allDevicesInDatabase.Count.ShouldBe(0);
+        }
+
+        [Fact]
         public async Task Delete_WhenEverythingIsOkay_ShouldReturnSuccess()
         {
             using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
@@ -73,6 +145,96 @@ namespace Devices.Tests
             var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
 
             device.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task Delete_WhenDeviceIsInUse_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand",
+                Name = "Test Name",
+                State = DeviceStates.InUse
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeTrue();
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            newDevice.ShouldNotBeNull();
+            newDevice.Id.ShouldBeGreaterThan(0);
+            newDevice.Brand.ShouldBe(insertDevice.Brand);
+            newDevice.Name.ShouldBe(insertDevice.Name);
+            newDevice.State.ShouldBe(insertDevice.State);
+
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.Where(x => x.Id == newDevice.Id);
+            var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            device.ShouldNotBeNull();
+            device.Id.ShouldBe(newDevice.Id);
+            device.Name.ShouldBe(newDevice.Name);
+            device.Brand.ShouldBe(newDevice.Brand);
+            device.State.ShouldBe(newDevice.State);
+            device.CreationTime.ShouldBe(newDevice.CreationTime);
+
+            var deleteResponse = await this._factory.DeleteAsync(newDevice.Id);
+
+            deleteResponse.IsSuccessStatusCode.ShouldBeFalse();
+            deleteResponse.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var deleteJson = await deleteResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(deleteJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device cannot be deleted because it is currently in use.");
+
+            var queryDeviceStillInDb = db.Devices.Where(x => x.Id == newDevice.Id);
+            var deviceStillInDb = await queryDeviceStillInDb.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            deviceStillInDb.ShouldNotBeNull();
+            deviceStillInDb.Id.ShouldBe(newDevice.Id);
+            deviceStillInDb.Name.ShouldBe(newDevice.Name);
+            deviceStillInDb.Brand.ShouldBe(newDevice.Brand);
+            deviceStillInDb.State.ShouldBe(newDevice.State);
+            deviceStillInDb.CreationTime.ShouldBe(newDevice.CreationTime);
+        }
+
+        [Fact]
+        public async Task Delete_WhenDeviceDoesNotExist_ShouldReturnError()
+        {
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+
+            var deleteResponse = await this._factory.DeleteAsync(int.MaxValue);
+
+            deleteResponse.IsSuccessStatusCode.ShouldBeFalse();
+            deleteResponse.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var deleteJson = await deleteResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(deleteJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device cannot be deleted because it does not exist in the database.");
+
+            var queryDeviceStillInDb = db.Devices.Where(x => x.Id == int.MaxValue);
+            var deviceStillInDb = await queryDeviceStillInDb.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            deviceStillInDb.ShouldBeNull();
         }
 
         [Fact]
@@ -317,6 +479,61 @@ namespace Devices.Tests
             queryAllDevices.Count(x => x.State == DeviceStates.Available).ShouldBe(3);
             queryAllDevices.Count(x => x.State == DeviceStates.Inactive).ShouldBe(5);
             queryAllDevices.Count(x => x.State == DeviceStates.InUse).ShouldBe(8);
+        }
+
+        [Fact]
+        public async Task FetchSingleDevice_WhenEverythingIsOkay_ShouldReturnSuccess()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand",
+                Name = "Test Name",
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeTrue();
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            newDevice.ShouldNotBeNull();
+            newDevice.Id.ShouldBeGreaterThan(0);
+            newDevice.Brand.ShouldBe(insertDevice.Brand);
+            newDevice.Name.ShouldBe(insertDevice.Name);
+            newDevice.State.ShouldBe(insertDevice.State);
+
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.Where(x => x.Id == newDevice.Id);
+            var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            device.ShouldNotBeNull();
+            device.Id.ShouldBe(newDevice.Id);
+            device.Name.ShouldBe(newDevice.Name);
+            device.Brand.ShouldBe(newDevice.Brand);
+            device.State.ShouldBe(newDevice.State);
+            device.CreationTime.ShouldBe(newDevice.CreationTime);
+
+            var fetchResponse = await this._factory.FetchSingleDeviceAsync(newDevice.Id);
+
+            fetchResponse.IsSuccessStatusCode.ShouldBeTrue();
+            var fetchJson = await fetchResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var fetchedDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(fetchJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            fetchedDevice.ShouldNotBeNull();
+            fetchedDevice.Id.ShouldBe(newDevice.Id);
+            fetchedDevice.Name.ShouldBe(newDevice.Name);
+            fetchedDevice.Brand.ShouldBe(newDevice.Brand);
+            fetchedDevice.State.ShouldBe(newDevice.State);
+            fetchedDevice.CreationTime.ShouldBe(newDevice.CreationTime);
         }
     }
 }
