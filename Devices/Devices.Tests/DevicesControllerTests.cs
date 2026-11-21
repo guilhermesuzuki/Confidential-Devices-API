@@ -1,4 +1,5 @@
 ﻿using Devices.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 using System.Transactions;
@@ -11,6 +12,7 @@ namespace Devices.Tests
         public async Task CreateDevice_WhenEverythingIsOkay_ShouldReturnSuccess()
         {
             using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
 
             var insertDevice = new InsertDevice
             {
@@ -33,8 +35,7 @@ namespace Devices.Tests
             newDevice.Brand.ShouldBe(insertDevice.Brand);
             newDevice.Name.ShouldBe(insertDevice.Name);
             newDevice.State.ShouldBe(insertDevice.State);
-
-            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            
             var query = db.Devices.Where(x => x.Id == newDevice.Id);
             var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
 
@@ -44,6 +45,81 @@ namespace Devices.Tests
             device.Brand.ShouldBe(newDevice.Brand);
             device.State.ShouldBe(newDevice.State);
             device.CreationTime.ShouldBe(newDevice.CreationTime);
+        }
+
+        [Fact]
+        public async Task CreateDevice_WhenBrandIsEmpty_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = string.Empty,
+                Name = "Test Name",
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeFalse();
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device brand cannot be empty.");
+
+            var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            allDevicesInDatabase.ShouldNotBeNull();
+            allDevicesInDatabase.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task CreateDevice_WhenBrandIsNull_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = null!,
+                Name = "Test Name",
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeFalse();
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<ValidationProblemDetails>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Status.ShouldBe(400);
+            errors.Title.ShouldBe("One or more validation errors occurred.");
+            errors.Errors.Count.ShouldBe(1);
+            errors.Errors.First().Value.Count().ShouldBe(1);
+            errors.Errors.First().Value.First().ShouldBe("The Brand field is required.");
+
+            var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            allDevicesInDatabase.ShouldNotBeNull();
+            allDevicesInDatabase.Count.ShouldBe(0);
         }
 
         [Fact]
@@ -75,6 +151,81 @@ namespace Devices.Tests
             errors.ShouldNotBeNull();
             errors.Count.ShouldBe(1);
             errors[0].ShouldBe("Device brand cannot exceed 64 characters.");
+
+            var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            allDevicesInDatabase.ShouldNotBeNull();
+            allDevicesInDatabase.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task CreateDevice_WhenNameIsEmpty_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand",
+                Name = string.Empty,
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeFalse();
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device name cannot be empty.");
+
+            var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            allDevicesInDatabase.ShouldNotBeNull();
+            allDevicesInDatabase.Count.ShouldBe(0);
+        }
+
+        [Fact]
+        public async Task CreateDevice_WhenNameIsNull_ShouldReturnError()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand",
+                Name = null!,
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeFalse();
+            response.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<ValidationProblemDetails>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Status.ShouldBe(400);
+            errors.Title.ShouldBe("One or more validation errors occurred.");
+            errors.Errors.Count.ShouldBe(1);
+            errors.Errors.First().Value.Count().ShouldBe(1);
+            errors.Errors.First().Value.First().ShouldBe("The Name field is required.");
 
             var allDevicesInDatabase = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
 
@@ -534,6 +685,68 @@ namespace Devices.Tests
             fetchedDevice.Brand.ShouldBe(newDevice.Brand);
             fetchedDevice.State.ShouldBe(newDevice.State);
             fetchedDevice.CreationTime.ShouldBe(newDevice.CreationTime);
+        }
+
+        [Fact]
+        public async Task UpdateDevice_WhenEverythingIsOkay_ShouldReturnSuccess()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand",
+                Name = "Test Name",
+                State = DeviceStates.Available
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeTrue();
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            newDevice.ShouldNotBeNull();
+            newDevice.Id.ShouldBeGreaterThan(0);
+            newDevice.Brand.ShouldBe(insertDevice.Brand);
+            newDevice.Name.ShouldBe(insertDevice.Name);
+            newDevice.State.ShouldBe(insertDevice.State);
+
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.Where(x => x.Id == newDevice.Id);
+            var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            device.ShouldNotBeNull();
+            device.Id.ShouldBe(newDevice.Id);
+            device.Name.ShouldBe(newDevice.Name);
+            device.Brand.ShouldBe(newDevice.Brand);
+            device.State.ShouldBe(newDevice.State);
+            device.CreationTime.ShouldBe(newDevice.CreationTime);
+
+            var updateDevice = new UpdateDevice
+            {
+                Id = newDevice.Id,
+                Brand = "Updated Brand",
+                Name = "Updated Name",
+                State = DeviceStates.InUse
+            };
+
+            var updateResponse = await this._factory.UpdateAsync(updateDevice);
+
+            updateResponse.IsSuccessStatusCode.ShouldBeTrue();
+            var updateJson = await updateResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var updatedDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(updateJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            updatedDevice.ShouldNotBeNull();
+            updatedDevice.Id.ShouldBe(newDevice.Id);
+            updatedDevice.Brand.ShouldBe(updateDevice.Brand);
+            updatedDevice.Name.ShouldBe(updateDevice.Name);
+            updatedDevice.State.ShouldBe(updateDevice.State ?? DeviceStates.Available);
         }
     }
 }
