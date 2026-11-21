@@ -1,0 +1,24 @@
+
+services:
+  myapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: myapi
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Data Source=/app/data/myapi.db"
+
+    volumes:
+      - myapi-data:/app/data
+
+    restart: unless-stopped
+
+volumes:
+  myapi-data:
+    name: myapi-data

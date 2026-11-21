@@ -1,0 +1,15 @@
+
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+**/.idea/
+.vscode/
+**/TestResults/
+*.user
+*.suo
+*.db
+*.db-shm
+*.db-wal
+Dockerfile*
+docker-compose*

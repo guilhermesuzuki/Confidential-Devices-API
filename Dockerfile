@@ -8,7 +8,7 @@ COPY ["Devices/Devices.API/Devices.API.csproj", "src/Devices.API/"]
 RUN dotnet restore "src/Devices.API/Devices.API.csproj"
 
 COPY . .
-WORKDIR /src/src/Devices.API
+WORKDIR /src/Devices.API
 
 RUN dotnet publish "Devices.API.csproj" \
     -c Release \
