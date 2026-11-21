@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
 
-    container_name: myapi
+    container_name: devices-api-container
 
     ports:
       - "8080:8080"
