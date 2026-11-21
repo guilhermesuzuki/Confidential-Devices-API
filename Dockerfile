@@ -2,13 +2,13 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 
-WORKDIR /src
-
-COPY ["Devices/Devices.API/Devices.API.csproj", "src/Devices.API/"]
-RUN dotnet restore "src/Devices.API/Devices.API.csproj"
+COPY ["Devices/Devices.API/Devices.API.csproj", "Devices/Devices.API/"]
+COPY ["Devices/Devices.Models/Devices.Models.csproj", "Devices/Devices.Models/"]
+RUN dotnet restore "Devices/Devices.Models/Devices.Models.csproj"
+RUN dotnet restore "Devices/Devices.API/Devices.API.csproj"
 
 COPY . .
-WORKDIR /src/Devices.API
+WORKDIR Devices/Devices.API
 
 RUN dotnet publish "Devices.API.csproj" \
     -c Release \

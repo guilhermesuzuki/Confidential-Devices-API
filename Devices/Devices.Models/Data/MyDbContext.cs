@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using System.Globalization;
 
 namespace Devices.Models.Data
 {
@@ -33,10 +34,6 @@ namespace Devices.Models.Data
             modelBuilder.Entity<Device>().Property(x => x.State).HasConversion(
                 x => x.ToString(),
                 x => Enum.Parse<DeviceStates>(x)
-                );
-            modelBuilder.Entity<Device>().Property(x => x.CreationTime).HasConversion(
-                x => x.ToString("yyyy.MM.dd HH:mm:ss.fffffff"),
-                x => DateTime.ParseExact(x, "yyyy.MM.dd HH:mm:ss.fffffff", null)
                 );
         }
     }
