@@ -20,7 +20,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 
 WORKDIR /app
 
+RUN ls -la
+
 COPY --from=build /app/publish .
+
+RUN chmod 777 /app
+RUN chmod 777 devices.db
 
 ENV ASPNETCORE_HTTP_PORTS=8080
 
