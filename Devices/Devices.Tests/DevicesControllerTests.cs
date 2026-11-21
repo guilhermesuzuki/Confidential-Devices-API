@@ -748,5 +748,77 @@ namespace Devices.Tests
             updatedDevice.Name.ShouldBe(updateDevice.Name);
             updatedDevice.State.ShouldBe(updateDevice.State ?? DeviceStates.Available);
         }
+
+        [Fact]
+        public async Task UpdateDevice_WhenDeviceIsInUse_ShouldNotUpdateDevice()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+
+            var insertDevice = new InsertDevice
+            {
+                Brand = "Test Brand (InUse)",
+                Name = "Test Name (InUse)",
+                State = DeviceStates.InUse
+            };
+
+            var response = await this._factory.CreateAsync(insertDevice);
+
+            response.IsSuccessStatusCode.ShouldBeTrue();
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            newDevice.ShouldNotBeNull();
+            newDevice.Id.ShouldBeGreaterThan(0);
+            newDevice.Brand.ShouldBe(insertDevice.Brand);
+            newDevice.Name.ShouldBe(insertDevice.Name);
+            newDevice.State.ShouldBe(insertDevice.State);
+
+            var query = db.Devices.Where(x => x.Id == newDevice.Id);
+            var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            device.ShouldNotBeNull();
+            device.Id.ShouldBe(newDevice.Id);
+            device.Name.ShouldBe(newDevice.Name);
+            device.Brand.ShouldBe(newDevice.Brand);
+            device.State.ShouldBe(newDevice.State);
+            device.CreationTime.ShouldBe(newDevice.CreationTime);
+
+            var updateDevice = new UpdateDevice
+            {
+                Id = newDevice.Id,
+                Brand = "Updated Brand",
+                Name = "Updated Name",
+                State = DeviceStates.Available
+            };
+
+            var updateResponse = await this._factory.UpdateAsync(updateDevice);
+
+            updateResponse.IsSuccessStatusCode.ShouldBeFalse();
+            updateResponse.StatusCode.ShouldBe(System.Net.HttpStatusCode.BadRequest);
+
+            var updateJson = await updateResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var errors = System.Text.Json.JsonSerializer.Deserialize<List<string>>(updateJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            errors.ShouldNotBeNull();
+            errors.Count.ShouldBe(1);
+            errors[0].ShouldBe("Device cannot be updated because it is currently in use.");
+
+            var nonUpdatedDeviceQuery = db.Devices.Where(x => x.Id == newDevice.Id);
+            var nonUpdatedDevice = await nonUpdatedDeviceQuery.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
+
+            nonUpdatedDevice.ShouldNotBeNull();
+            nonUpdatedDevice.Id.ShouldBe(newDevice.Id);
+            nonUpdatedDevice.Brand.ShouldBe(newDevice.Brand);
+            nonUpdatedDevice.CreationTime.UtcDateTime.ShouldBe(newDevice.CreationTime.UtcDateTime);
+            nonUpdatedDevice.Name.ShouldBe(newDevice.Name);
+            nonUpdatedDevice.State.ShouldBe(newDevice.State);
+        }
     }
 }
