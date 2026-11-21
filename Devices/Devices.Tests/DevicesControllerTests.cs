@@ -161,6 +161,7 @@ namespace Devices.Tests
                 newDevice.Id.ShouldBeGreaterThan(0);
                 newDevice.Name.ShouldBe(insertDevice.Name);
                 newDevice.Brand.ShouldBe(insertDevice.Brand);
+                newDevice.State.ShouldBe(insertDevice.State);
 
                 newDevices.Add(newDevice);
 
@@ -180,6 +181,142 @@ namespace Devices.Tests
                 allDevicesFromBrand[0].Name.ShouldBe(newDevices[i].Name);
                 allDevicesFromBrand[0].State.ShouldBe(newDevices[i].State);
             }
+
+            var queryByBrand = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+
+            for (int i = 0; i < newDevices.Count; i++)
+            {
+                var found = queryByBrand.FirstOrDefault(x => x.Id == newDevices[i].Id);
+
+                found.ShouldNotBeNull();
+                found.Name.ShouldBe(newDevices[i].Name);
+                found.Brand.ShouldBe(newDevices[i].Brand);
+                found.State.ShouldBe(newDevices[i].State);
+                found.CreationTime.UtcDateTime.ShouldBe(newDevices[i].CreationTime.UtcDateTime);
+            }
+        }
+
+        [Fact]
+        public async Task FetchByState_WhenEverythingIsOkay_ShouldReturnEntities()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var newDevices = new List<Device>();
+
+            for (int i = 0; i < 3; i++)
+            {
+                var insertDevice = new InsertDevice
+                {
+                    Brand = $"Test Brand {i}",
+                    Name = $"Test Name {i}",
+                    State = DeviceStates.Available
+                };
+
+                var response = await this._factory.CreateAsync(insertDevice);
+                response.IsSuccessStatusCode.ShouldBeTrue();
+                var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+                var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                newDevice.ShouldNotBeNull();
+                newDevice.Id.ShouldBeGreaterThan(0);
+                newDevice.Name.ShouldBe(insertDevice.Name);
+                newDevice.Brand.ShouldBe(insertDevice.Brand);
+                newDevice.State.ShouldBe(insertDevice.State);
+
+                newDevices.Add(newDevice);
+            }
+
+            for (int i = 0; i < 5; i++)
+            {
+                var insertDevice = new InsertDevice
+                {
+                    Brand = $"Test Brand {i}",
+                    Name = $"Test Name {i}",
+                    State = DeviceStates.Inactive
+                };
+
+                var response = await this._factory.CreateAsync(insertDevice);
+                response.IsSuccessStatusCode.ShouldBeTrue();
+                var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+                var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                newDevice.ShouldNotBeNull();
+                newDevice.Id.ShouldBeGreaterThan(0);
+                newDevice.Name.ShouldBe(insertDevice.Name);
+                newDevice.Brand.ShouldBe(insertDevice.Brand);
+                newDevice.State.ShouldBe(insertDevice.State);
+
+                newDevices.Add(newDevice);
+            }
+
+            for (int i = 0; i < 8; i++)
+            {
+                var insertDevice = new InsertDevice
+                {
+                    Brand = $"Test Brand {i}",
+                    Name = $"Test Name {i}",
+                    State = DeviceStates.InUse
+                };
+
+                var response = await this._factory.CreateAsync(insertDevice);
+                response.IsSuccessStatusCode.ShouldBeTrue();
+                var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+                var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                newDevice.ShouldNotBeNull();
+                newDevice.Id.ShouldBeGreaterThan(0);
+                newDevice.Name.ShouldBe(insertDevice.Name);
+                newDevice.Brand.ShouldBe(insertDevice.Brand);
+                newDevice.State.ShouldBe(insertDevice.State);
+
+                newDevices.Add(newDevice);
+            }
+
+            var availableResponse = await this._factory.FetchByStateAsync(DeviceStates.Available);
+
+            availableResponse.IsSuccessStatusCode.ShouldBeTrue();
+            var availableJson = await availableResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var availableDevices = System.Text.Json.JsonSerializer.Deserialize<List<Device>>(availableJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            availableDevices.ShouldNotBeNull();
+            availableDevices.Count.ShouldBe(3);
+
+            var inactiveResponse = await this._factory.FetchByStateAsync(DeviceStates.Inactive);
+            var inactiveJson = await inactiveResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var inactiveDevices = System.Text.Json.JsonSerializer.Deserialize<List<Device>>(inactiveJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            inactiveDevices.ShouldNotBeNull();
+            inactiveDevices.Count.ShouldBe(5);
+
+            var inUseResponse = await this._factory.FetchByStateAsync(DeviceStates.InUse);
+            var inUseJson = await inUseResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var inUseDevices = System.Text.Json.JsonSerializer.Deserialize<List<Device>>(inUseJson, new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            inUseDevices.ShouldNotBeNull();
+            inUseDevices.Count.ShouldBe(8);
+
+            var queryAllDevices = await db.Devices.ToListAsync(TestContext.Current.CancellationToken);
+            queryAllDevices.Count(x => x.State == DeviceStates.Available).ShouldBe(3);
+            queryAllDevices.Count(x => x.State == DeviceStates.Inactive).ShouldBe(5);
+            queryAllDevices.Count(x => x.State == DeviceStates.InUse).ShouldBe(8);
         }
     }
 }
