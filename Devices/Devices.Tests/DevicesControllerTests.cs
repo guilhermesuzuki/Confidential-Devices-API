@@ -39,11 +39,11 @@ namespace Devices.Tests
             var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
 
             device.ShouldNotBeNull();
-            device.Id.ShouldBe(device.Id);
-            device.Name.ShouldBe(device.Name);
-            device.Brand.ShouldBe(device.Brand);
-            device.State.ShouldBe(device.State);
-            device.CreationTime.ShouldBe(device.CreationTime);
+            device.Id.ShouldBe(newDevice.Id);
+            device.Name.ShouldBe(newDevice.Name);
+            device.Brand.ShouldBe(newDevice.Brand);
+            device.State.ShouldBe(newDevice.State);
+            device.CreationTime.ShouldBe(newDevice.CreationTime);
         }
 
         [Fact]
