@@ -4,29 +4,35 @@ using Devices.Models.Validations;
 using FluentValidation;
 using Scalar.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddDbContextFactory<MyDbContext>();
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IValidator<int>, DeviceDeleteValidation>();
-builder.Services.AddKeyedSingleton<IValidator<InsertDevice>, DeviceInsertValidation>("insert");
-builder.Services.AddKeyedSingleton<IValidator<UpdateDevice>, DeviceUpdateValidation>("update");
+        // Add services to the container.
+        builder.Services.AddDbContextFactory<MyDbContext>();
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<IValidator<int>, DeviceDeleteValidation>();
+        builder.Services.AddKeyedSingleton<IValidator<InsertDevice>, DeviceInsertValidation>("insert");
+        builder.Services.AddKeyedSingleton<IValidator<UpdateDevice>, DeviceUpdateValidation>("update");
 
-builder.Services.AddControllers();
+        builder.Services.AddControllers();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        builder.Services.AddOpenApi();
 
-var app = builder.Build();
+        var app = builder.Build();
 
-app.MapOpenApi();
-app.MapScalarApiReference();
+        app.MapOpenApi();
+        app.MapScalarApiReference();
 
-app.UseHttpsRedirection();
+        app.UseHttpsRedirection();
 
-app.UseAuthorization();
+        app.UseAuthorization();
 
-app.MapControllers();
+        app.MapControllers();
 
-app.Run();
+        app.Run();
+    }
+}

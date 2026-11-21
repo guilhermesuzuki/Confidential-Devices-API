@@ -6,4 +6,5 @@
     <Platform Project="x64" />
   </Project>
   <Project Path="Devices.Models/Devices.Models.csproj" />
+  <Project Path="Devices.Tests/Devices.Tests.csproj" Id="47ec6e95-6cbe-452e-b3a1-13f35e6bafd5" />
 </Solution>

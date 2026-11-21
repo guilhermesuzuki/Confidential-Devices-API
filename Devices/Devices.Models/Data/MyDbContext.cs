@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Devices.Models.Data
 {
@@ -18,6 +19,10 @@ namespace Devices.Models.Data
 
             optionsBuilder.UseSqlite("Data Source=devices.db");
             optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            optionsBuilder.ConfigureWarnings(warnings => 
+            {
+                warnings.Ignore(RelationalEventId.AmbientTransactionWarning);
+            });
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
