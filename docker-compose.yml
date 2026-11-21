@@ -12,13 +12,5 @@ services:
 
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: "Data Source=/app/data/myapi.db"
-
-    volumes:
-      - myapi-data:/app/data
 
     restart: unless-stopped
-
-volumes:
-  myapi-data:
-    name: myapi-data
