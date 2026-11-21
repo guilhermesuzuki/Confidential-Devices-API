@@ -130,5 +130,56 @@ namespace Devices.Tests
                 found.CreationTime.UtcDateTime.ShouldBe(newDevice.CreationTime.UtcDateTime);
             }
         }
+
+        [Fact]
+        public async Task FetchByBrand_WhenEverythingIsOkay_ShouldReturnEntities()
+        {
+            using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+            using var db = await this._dbContextFactory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+            var query = db.Devices.AsQueryable();
+            await query.ExecuteDeleteAsync(TestContext.Current.CancellationToken);
+
+            var newDevices = new List<Device>();
+
+            for (int i = 0; i < 5; i++)
+            {
+                var insertDevice = new InsertDevice
+                {
+                    Brand = $"Test Brand {i}",
+                    Name = $"Test Name {i}",
+                    State = DeviceStates.Available
+                };
+
+                var response = await this._factory.CreateAsync(insertDevice);
+                response.IsSuccessStatusCode.ShouldBeTrue();
+                var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+                var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                newDevice.ShouldNotBeNull();
+                newDevice.Id.ShouldBeGreaterThan(0);
+                newDevice.Name.ShouldBe(insertDevice.Name);
+                newDevice.Brand.ShouldBe(insertDevice.Brand);
+
+                newDevices.Add(newDevice);
+
+                var brand = await this._factory.FetchByBrandAsync(newDevices[i].Brand);
+                brand.IsSuccessStatusCode.ShouldBeTrue();
+
+                var brandJson = await brand.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+                var allDevicesFromBrand = System.Text.Json.JsonSerializer.Deserialize<List<Device>>(brandJson, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+                allDevicesFromBrand.ShouldNotBeNull();
+                allDevicesFromBrand.Count.ShouldBe(1);
+                allDevicesFromBrand[0].Brand.ShouldBe(newDevices[i].Brand);
+                allDevicesFromBrand[0].CreationTime.UtcDateTime.ShouldBe(newDevices[i].CreationTime.UtcDateTime);
+                allDevicesFromBrand[0].Id.ShouldBe(newDevices[i].Id);
+                allDevicesFromBrand[0].Name.ShouldBe(newDevices[i].Name);
+                allDevicesFromBrand[0].State.ShouldBe(newDevices[i].State);
+            }
+        }
     }
 }

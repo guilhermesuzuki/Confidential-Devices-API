@@ -35,13 +35,13 @@ namespace Devices.Tests
         public async Task<HttpResponseMessage> FetchByBrandAsync(string brand)
         {
             using var client = CreateClient();
-            return await client.GetAsync($"/api/devices/fetch?brand={brand}");
+            return await client.GetAsync($"/api/devices/brand?brand={brand}");
         }
 
         public async Task<HttpResponseMessage> FetchByStateAsync(DeviceStates state)
         {
             using var client = CreateClient();
-            return await client.GetAsync($"/api/devices/fetch?state={state}");
+            return await client.GetAsync($"/api/devices/state?state={state}");
         }
 
         public async Task<HttpResponseMessage> FetchSingleDeviceAsync(int id)
