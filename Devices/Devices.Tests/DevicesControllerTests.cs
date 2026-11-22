@@ -24,7 +24,7 @@ namespace Devices.Tests
             var response = await this._factory.CreateAsync(insertDevice);
 
             response.IsSuccessStatusCode.ShouldBeTrue();
-            var json  = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            var json = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
             var newDevice = System.Text.Json.JsonSerializer.Deserialize<Device>(json, new System.Text.Json.JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
@@ -35,7 +35,7 @@ namespace Devices.Tests
             newDevice.Brand.ShouldBe(insertDevice.Brand);
             newDevice.Name.ShouldBe(insertDevice.Name);
             newDevice.State.ShouldBe(insertDevice.State);
-            
+
             var query = db.Devices.Where(x => x.Id == newDevice.Id);
             var device = await query.FirstOrDefaultAsync(TestContext.Current.CancellationToken);
 
